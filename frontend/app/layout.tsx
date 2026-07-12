@@ -12,10 +12,10 @@ export const metadata: Metadata = {
     icon: [
       {
         url: '/pokeball.png',
-        type: 'image/svg+xml',
+        type: 'image/png',
       },
     ],
-    apple: '/apple-icon.png',
+    apple: '/pokeball.png',
   },
 }
 
