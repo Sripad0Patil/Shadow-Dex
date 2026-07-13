@@ -86,7 +86,7 @@ export default function PokemonCard({ id, name, imageUrl, guessed, index }: Poke
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: index * 0.02 }}
+      transition={{ delay: Math.min(index * 0.015, 0.4) }}
       onClick={() => {
         if (!isMobile) {
           setIsFlipped(!isFlipped);
@@ -122,6 +122,7 @@ export default function PokemonCard({ id, name, imageUrl, guessed, index }: Poke
                   width={120}
                   height={120}
                   onError={handleImageError}
+                  loading="lazy"
                   className={`w-full h-full object-contain p-2 transition-all duration-300 ${
                     guessed ? 'brightness-100' : 'brightness-75 group-hover:brightness-90'
                   }`}

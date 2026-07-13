@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import GameContainer from '@/components/game/GameContainer';
 import PokemonCard from '@/components/pokedex/PokemonCard';
-import { getPokemonImageUrl } from '@/lib/utils/pokemon';
+import { getPokemonImageUrl, getGenerationFromId } from '@/lib/utils/pokemon';
 import { getUserStorageKey } from '@/lib/utils/storage';
 import { useAuth } from '@/lib/context/AuthContext';
 import { ChevronLeft, Search } from 'lucide-react';
@@ -17,6 +17,19 @@ interface PokemonEntry {
   guessed: boolean;
 }
 
+const generations = [
+  { name: 'All Generations', value: 'all' },
+  { name: 'Gen 1 (Kanto)', value: 1 },
+  { name: 'Gen 2 (Johto)', value: 2 },
+  { name: 'Gen 3 (Hoenn)', value: 3 },
+  { name: 'Gen 4 (Sinnoh)', value: 4 },
+  { name: 'Gen 5 (Unova)', value: 5 },
+  { name: 'Gen 6 (Kalos)', value: 6 },
+  { name: 'Gen 7 (Alola)', value: 7 },
+  { name: 'Gen 8 (Galar)', value: 8 },
+  { name: 'Gen 9 (Paldea)', value: 9 },
+];
+
 export default function Pokedex() {
   const router = useRouter();
   const { user } = useAuth();
@@ -24,6 +37,7 @@ export default function Pokedex() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [guessedOnly, setGuessedOnly] = useState(false);
+  const [selectedGeneration, setSelectedGeneration] = useState<number | 'all'>('all');
 
   useEffect(() => {
     const historyKey = getUserStorageKey('gameHistory', user?.id);
@@ -39,7 +53,7 @@ export default function Pokedex() {
     // Fetch pokemon list with actual names from PokéAPI
     const fetchPokemonList = async () => {
       try {
-        const response = await fetch('https://pokeapi.co/api/v2/pokemon?limit=151');
+        const response = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1025');
         const data = await response.json();
         
         const pokemonList: PokemonEntry[] = data.results.map((p: any, index: number) => ({
@@ -53,7 +67,7 @@ export default function Pokedex() {
       } catch (error) {
         console.error('[v0] Failed to fetch pokemon list:', error);
         // Fallback to placeholder names
-        const pokemonList: PokemonEntry[] = Array.from({ length: 151 }, (_, i) => ({
+        const pokemonList: PokemonEntry[] = Array.from({ length: 1025 }, (_, i) => ({
           id: i + 1,
           name: `Pokémon #${i + 1}`,
           imageUrl: getPokemonImageUrl(i + 1),
@@ -71,7 +85,8 @@ export default function Pokedex() {
   const filteredPokemon = pokemon.filter((p) => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.id.toString() === searchTerm;
     const matchesFilter = !guessedOnly || p.guessed;
-    return matchesSearch && matchesFilter;
+    const matchesGen = selectedGeneration === 'all' || getGenerationFromId(p.id) === selectedGeneration;
+    return matchesSearch && matchesFilter && matchesGen;
   });
 
   const guessedCount = pokemon.filter((p) => p.guessed).length;
@@ -109,16 +124,33 @@ export default function Pokedex() {
           />
         </div>
 
-        <button
-          onClick={() => setGuessedOnly(!guessedOnly)}
-          className={`w-full sm:w-auto px-4 py-2 rounded-lg font-medium text-sm sm:text-base transition-all duration-300 ${
-            guessedOnly
-              ? 'bg-green-500 text-white'
-              : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-          }`}
-        >
-          {guessedOnly ? '✓ Guessed Only' : 'Show All'}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => setGuessedOnly(!guessedOnly)}
+            className={`w-full sm:w-auto px-4 py-2.5 rounded-lg font-medium text-sm sm:text-base transition-all duration-300 ${
+              guessedOnly
+                ? 'bg-green-500 text-white'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+            }`}
+          >
+            {guessedOnly ? '✓ Guessed Only' : 'Show All'}
+          </button>
+
+          <select
+            value={selectedGeneration}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSelectedGeneration(val === 'all' ? 'all' : Number(val));
+            }}
+            className="w-full sm:w-auto px-4 py-2.5 bg-slate-800 border border-slate-700 hover:border-slate-600 focus:border-blue-500 focus:outline-none rounded-lg text-sm sm:text-base text-slate-300 hover:text-white font-medium transition-all duration-300 cursor-pointer"
+          >
+            {generations.map((gen) => (
+              <option key={gen.value} value={gen.value} className="bg-slate-900 text-slate-300">
+                {gen.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </motion.div>
 
       {/* Pokemon Grid */}
